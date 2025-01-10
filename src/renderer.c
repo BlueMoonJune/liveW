@@ -212,7 +212,6 @@ void renderText(renderer *r, char *_text, GLfloat x, GLfloat y, GLfloat scale, f
     size_t size = mbstowcs(text, _text, len);
 
 	glUseProgram(r->progID);
-	printf("%d\n", GL_TEXTURE2 + 1);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(VAO);
 
@@ -274,7 +273,6 @@ void renderText(renderer *r, char *_text, GLfloat x, GLfloat y, GLfloat scale, f
         glDrawArrays(GL_TRIANGLES, 0, 6);
         x += (ch->advance >>
 				6) * scale;
-		printf("character %c drawn: %f, %f\n", text[i], w, h);
 	}
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -366,7 +364,6 @@ void render(renderer *r, float *sampleBuff, float *fftBuff, int buffSize)
 	time = getSystemTime();
 
 	GLint songinfoLoc = glGetUniformLocation(r->progID, "songinfo");
-	printf("%d\n", songinfoLoc);
 	if (songinfoLoc != -1) {
 		glUniform1i(songinfoLoc, 1);
 		float textColor[] = {1.0, 1.0, 1.0};

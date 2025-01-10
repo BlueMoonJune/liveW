@@ -1,0 +1,6 @@
+picom &
+sxhkd &
+cd ~/liveW
+./liveW -p fuji &
+cd ~
+exec i3

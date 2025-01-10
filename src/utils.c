@@ -136,9 +136,12 @@ int getSongInfo(char *artist, char *title, int *position, int *length)
 void getAlbumArt(SongInfo *songInfo) {
 	char *cmd = NULL;
 	char buff[128];
+	buff[0] = '\0';
 
     if (!cfg.onlyYT) {
-        exec("playerctl metadata mpris:artUrl", buff, sizeof(buff));
+		while(!strlen(buff)) {
+			exec("playerctl metadata mpris:artUrl", buff, sizeof(buff));
+		}
 
         if (strlen(buff)) {
             cmd = (char *)malloc(strlen("curl -Ls --output image.png ") + strlen(buff));
@@ -147,6 +150,7 @@ void getAlbumArt(SongInfo *songInfo) {
 
             if (!exec(cmd, buff, sizeof(buff))) {
 		        songInfo->newAlbumArt = true;
+				if (cfg.debug) printf("Downloaded album art: playerctl curl\n");
                 return;
             }
         }
@@ -157,6 +161,7 @@ void getAlbumArt(SongInfo *songInfo) {
 
 		if (exec(cmd, buff, sizeof(buff))) {
 			printf("albumArt script not found\n");
+			if (cfg.debug) printf("Downloaded album art: playerctl albumArt\n");
 			return;
 		}
 
@@ -245,11 +250,13 @@ void *updateSongInfo(void *arg)
 
 	while (*songInfo->cont) {
 		int status = getSongInfo(songInfo->artist, songInfo->title, &songInfo->position, &songInfo->length);
+		if (status != 0) {
+			printf("Song Info status: %d\n", status);
+		}
 		if (status == -1)
 			return NULL;
 
-		if (cfg.debug)
-			printf("Artist: %s\nTitle: %s\n", songInfo->artist, songInfo->title);
+		//if (cfg.debug) printf("Artist: %s\nTitle: %s\n", songInfo->artist, songInfo->title);
 
 		if (status == 1)
 			getAlbumArt(songInfo);

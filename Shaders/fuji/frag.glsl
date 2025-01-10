@@ -18,7 +18,7 @@ out vec4 color;
 
 #define IMAGE_WIDTH     0.10
 #define IMAGE_HEIGHT    (IMAGE_WIDTH * resolution.x / resolution.y)
-#define IMAGE_X         1-0.01-IMAGE_WIDTH
+#define IMAGE_X         1-0.02-IMAGE_WIDTH
 #define IMAGE_Y         HEIGHT + 0.03
 
 void cat(out vec4 color) {
@@ -66,7 +66,7 @@ void cat(out vec4 color) {
 
 	float bar_f = float(bar) / NB_BARS_F;
 
-	color = vec4(1.0);
+	color = vec4(1, 1, 1, 1);
 	color *= clamp((min((uv.x - bar_f) * NB_BARS_F, 1.0 - (uv.x - bar_f) * NB_BARS_F) - SPACE * 0.5) / NB_BARS_F * resolution.x, 0.0, 1.0);
 
 	if (uv.y < HEIGHT || uv.y > HEIGHT + f)
@@ -91,7 +91,8 @@ void cat(out vec4 color) {
 			color = mix(cover, vec4(1-cover.rgb, cover.a), color.a);
 		} else {
 			float r = texSize.y / texSize.x * xx;
-			color = mix(texture(albumArt, vec2(p.x * r + (1.0 - r) / 2.0, p.y)), color, color.a);
+			vec4 cover = texture(albumArt, vec2(p.x * r + (1.0 - r) / 2.0, p.y));
+			color = mix(cover, vec4(1-cover.rgb, cover.a), color.a);
 		}
 
     }
