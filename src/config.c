@@ -33,7 +33,7 @@ bool parseArgs(int argc, char *argv[])
     cfg.transparency = 0.8;
     cfg.shaderName = NULL;
     cfg.fps = 30;
-    cfg.fontName = "OpenSans.ttf";
+    cfg.fontName = "NotoSans-Regular.ttf";
 	cfg.onlyYT = false;
 
     char c;

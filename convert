@@ -1,0 +1,9 @@
+#!/usr/bin/zsh
+echo "#version 430
+uniform vec2 resolution;
+uniform float time;
+uniform sampler1D samples;
+uniform sampler1D fft;
+out vec4 color;
+"
+sed "s/iTime/time/; s/void mainImage( out vec4 fragColor, in vec2 fragCoord )/void main()/; s/iResolution/resolution/; s/fragCoord/gl_FragCoord.xy/; s/fragColor/color/" $1

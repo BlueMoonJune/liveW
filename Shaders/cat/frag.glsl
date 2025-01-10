@@ -1,5 +1,16 @@
 #version 430
 
+uniform int songinfo;
+uniform vec2 resolution;
+uniform float time;
+uniform sampler1D samples;
+uniform sampler1D fft;
+uniform float position;
+uniform sampler2D albumArt;
+uniform sampler2D text;
+in vec2 TexCoords;
+out vec4 color;
+
 #define NB_BARS         100
 #define NB_SAMPLES      1
 #define SPACE           0.05
@@ -11,22 +22,20 @@
 #define IMAGE_WIDTH     0.10
 #define IMAGE_HEIGHT    0.15
 
-uniform vec2 resolution;
-uniform float time;
-uniform sampler1D samples;
-uniform sampler1D fft;
-uniform float position;
-uniform sampler2D albumArt;
-out vec4 color;
-
 void main() {
-    
+
+	if (songinfo != 0) {
+
+		color = vec4(vec3(1), texture(text, TexCoords).r);
+		return;
+	}
+
     vec2 uv = gl_FragCoord.xy / resolution.xy;
 
     vec2 uuv = uv;
 
     uv.x = (uv.x - SIDE_SPACE) / (1.0 - 2.0 *SIDE_SPACE);
-    
+
     if(uv.x < 0.0 || uv.x > 1.0)
     {
     	color = vec4(0.);
@@ -54,7 +63,7 @@ void main() {
 			color = texture(albumArt, vec2(p.x * r + (1.0 - r) / 2.0, p.y));
 		}
 		return;
-	
+
     }
 
     if (uv.y < HEIGHT - 0.005 && uv.y > HEIGHT - 0.015) {
@@ -65,25 +74,25 @@ void main() {
         return;
     }
 
-    
+
     float NB_BARS_F = float(NB_BARS);
     int bar = int(floor(uv.x * NB_BARS_F));
-    
+
     float f = 0.;
     f = 0.;
-    
+
     for(int t=0; t<NB_SAMPLES; t++)
     {
     	f += texelFetch(fft, bar*NB_SAMPLES+t, 0).r;
     }
     f /= float(NB_SAMPLES);
-    
+
     f *= 0.3;
 	//f -= 0.0;
 
 	if (f <= 0.001)
 		f = 0.001;
-    
+
 	float bar_f = float(bar) / NB_BARS_F;
 
 	color = vec4(1.0);

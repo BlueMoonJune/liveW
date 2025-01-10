@@ -72,7 +72,7 @@ int getSongInfo(char *artist, char *title, int *position, int *length)
 		return -1;
     }
     sscanf(buff, "%d", position);
-	
+
     // Get title
 	if (exec("playerctl metadata title", buff, sizeof(buff))) {
 		printf("Playerctl doesn't exist\n");
@@ -89,7 +89,7 @@ int getSongInfo(char *artist, char *title, int *position, int *length)
 
 	if (!strlen(buff)) {
 		artist[0] = title[0] = '\0';
-		exec("rm --force image.jpg", buff, sizeof(buff));
+		exec("rm --force image.png", buff, sizeof(buff));
 		return 2;
 	}
 
@@ -141,9 +141,9 @@ void getAlbumArt(SongInfo *songInfo) {
         exec("playerctl metadata mpris:artUrl", buff, sizeof(buff));
 
         if (strlen(buff)) {
-            cmd = (char *)malloc(strlen("curl -Ls --output image.jpg ") + strlen(buff));
+            cmd = (char *)malloc(strlen("curl -Ls --output image.png ") + strlen(buff));
 
-            sprintf(cmd, "curl -Ls --output image.jpg %s", buff);
+            sprintf(cmd, "curl -Ls --output image.png %s", buff);
 
             if (!exec(cmd, buff, sizeof(buff))) {
 		        songInfo->newAlbumArt = true;
@@ -159,7 +159,7 @@ void getAlbumArt(SongInfo *songInfo) {
 			printf("albumArt script not found\n");
 			return;
 		}
-	
+
 		if (cfg.debug && strlen(buff))
 			printf("albumArt script output (%d): %s\n", (int)strlen(buff), buff);
 
@@ -218,15 +218,15 @@ void getAlbumArt(SongInfo *songInfo) {
             }
         }
     }
-    
+
     videoID[11] = '\0';
 
-    if (cfg.debug) 
+    if (cfg.debug)
         printf("Video ID: %s\n", videoID);
 
     free(cmd);
-    cmd = (char *)malloc(strlen("curl -o image.jpg -s https://i.ytimg.com/vi/zuJV-DAv_wE/maxresdefault.jpg") + 1);
-    sprintf(cmd, "curl -o image.jpg -s https://i.ytimg.com/vi/%s/maxresdefault.jpg", videoID);
+    cmd = (char *)malloc(strlen("curl -o image.png -s https://i.ytimg.com/vi/zuJV-DAv_wE/maxresdefault.jpg") + 1);
+    sprintf(cmd, "curl -o image.png -s https://i.ytimg.com/vi/%s/maxresdefault.jpg", videoID);
 
     if (exec(cmd, buff, sizeof(buff))) {
         if (cfg.debug)

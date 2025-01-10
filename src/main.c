@@ -9,6 +9,7 @@
 #include "renderer.h"
 #include "pulsefft.h"
 
+
 static struct pa_fft *ctx;
 
 void sig_handler(int sig_no) {

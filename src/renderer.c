@@ -1,7 +1,15 @@
+#include <time.h>
+
 #include "renderer.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "stb_image_write.h"
+
+static float old_time = 0;
+static int last_sec = 0;
+static int last_sec_clock = 0;
+static int clocks_per_sec = 10000;
 
 renderer *init_rend()
 {
@@ -61,6 +69,7 @@ renderer *init_rend()
 
 	checkErrors("Window init");
 
+
 	return r;
 }
 
@@ -88,7 +97,7 @@ void loadCharacter(unsigned long c)
     );
 
     float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -122,8 +131,8 @@ void linkBuffers(renderer *r)
 		1.0f, 1.0f
 	};
     glBufferData(GL_ARRAY_BUFFER, sizeof(float)*8, data, GL_STREAM_DRAW);
-	GLint posPtr = glGetAttribLocation(r->progID, "pos");
-    glVertexAttribPointer(posPtr, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	GLint posPtr = glGetAttribLocation(r->progID, "vertex");
+    glVertexAttribPointer(posPtr, 2, GL_FLOAT, GL_FALSE, 8, 0);
     glEnableVertexAttribArray(posPtr);
 
 	checkErrors("Linking buffers");
@@ -161,7 +170,7 @@ void linkBuffers(renderer *r)
     	printf("ERROR::FREETYPE: Could not init FreeType Library\n");
 		exit(1);
 	}
-   
+
    	char *fontPath = NULL;
 	fontPath = (char*)malloc((strlen("fonts/") + strlen(cfg.fontName)) * sizeof(char));
 	sprintf(fontPath, "fonts/%s", cfg.fontName);
@@ -188,7 +197,8 @@ void linkBuffers(renderer *r)
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
- 
+
+
 	checkErrors("Loading font");
 }
 
@@ -201,8 +211,8 @@ void renderText(renderer *r, char *_text, GLfloat x, GLfloat y, GLfloat scale, f
     wchar_t *text = malloc(sizeof(wchar_t) * (len + 1));
     size_t size = mbstowcs(text, _text, len);
 
-	glUseProgram(r->progText);
-    glUniform3f(glGetUniformLocation(r->progText, "textColor"), color[0], color[1], color[2]);
+	glUseProgram(r->progID);
+	printf("%d\n", GL_TEXTURE2 + 1);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(VAO);
 
@@ -225,6 +235,7 @@ void renderText(renderer *r, char *_text, GLfloat x, GLfloat y, GLfloat scale, f
 
 	x *= r->win->width;
 	y *= r->win->height;
+
 
     for (int i = 0; i < size; i++)
     {
@@ -261,7 +272,9 @@ void renderText(renderer *r, char *_text, GLfloat x, GLfloat y, GLfloat scale, f
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        x += (ch->advance >> 6) * scale;
+        x += (ch->advance >>
+				6) * scale;
+		printf("character %c drawn: %f, %f\n", text[i], w, h);
 	}
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -290,7 +303,7 @@ void render(renderer *r, float *sampleBuff, float *fftBuff, int buffSize)
 
     // Configure & link opengl
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_CONSTANT_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glUseProgram(r->progID);
 	glBindVertexArray(vertArray);
@@ -305,12 +318,15 @@ void render(renderer *r, float *sampleBuff, float *fftBuff, int buffSize)
 
     // Load album art if toggled
 	if (r->songInfo.newAlbumArt) {
+		printf("loading album art\n");
 		stbi_set_flip_vertically_on_load(true);
-		r->songInfo.albumArt = stbi_load("image.jpg", &r->songInfo.width, &r->songInfo.height, &r->songInfo.nrChannels, 0);
+		r->songInfo.albumArt = stbi_load("image.png", &r->songInfo.width, &r->songInfo.height, &r->songInfo.nrChannels, 0);
+		int format = r->songInfo.nrChannels == 4 ? GL_RGBA : GL_RGB;
+
 		if (r->songInfo.albumArt) {
 			glActiveTexture(GL_TEXTURE2);
     		glBindTexture(GL_TEXTURE_2D, r->albumArt);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, r->songInfo.width, r->songInfo.height, 0, GL_RGB, GL_UNSIGNED_BYTE, r->songInfo.albumArt);
+			glTexImage2D(GL_TEXTURE_2D, 0, format, r->songInfo.width, r->songInfo.height, 0, format, GL_UNSIGNED_BYTE, r->songInfo.albumArt);
 		} else {
 			if (cfg.debug)
 				printf("Couldn't load album art\n");
@@ -319,7 +335,7 @@ void render(renderer *r, float *sampleBuff, float *fftBuff, int buffSize)
 
 			unsigned char tmp[3] = {255, 255, 255};
 
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, tmp);
+			glTexImage2D(GL_TEXTURE_2D, 0, format, 1, 1, 0, format, GL_UNSIGNED_BYTE, tmp);
 
 		}
 
@@ -327,9 +343,14 @@ void render(renderer *r, float *sampleBuff, float *fftBuff, int buffSize)
 		stbi_image_free(r->songInfo.albumArt);
 	}
 
+	float new_time = clock()/30000.0f;
+	if (new_time > old_time) {
+		old_time = new_time;
+	}
+
     // Set uniforms for shaders
     GLint timeLoc = glGetUniformLocation(r->progID, "time");
-    if (timeLoc != -1) glUniform1f(timeLoc, getUnixTime());
+    if (timeLoc != -1) glUniform1f(timeLoc, old_time);
 
     GLint resolutionLoc = glGetUniformLocation(r->progID, "resolution");
     if (resolutionLoc != -1) glUniform2f(resolutionLoc, (float)r->win->width, (float)r->win->height);
@@ -337,22 +358,21 @@ void render(renderer *r, float *sampleBuff, float *fftBuff, int buffSize)
     GLint positionLoc = glGetUniformLocation(r->progID, "position");
     if (positionLoc != -1) glUniform1f(positionLoc, r->songInfo.position / ((float)r->songInfo.length + 0.01));
 
+
     // Draw screen
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	char *time;
 	time = getSystemTime();
 
-	if (cfg.shaderName && !strcmp(cfg.shaderName, "black")) {
-		float textColor[] = {0.0, 0.0, 0.0};
-		renderText(r, r->songInfo.artist, -1.0f, 0.5371f, 1.25f, textColor);
-		renderText(r, r->songInfo.title, -1.0f, 0.4395f, 0.75f, textColor);
-		renderText(r, time, -1.0f, 0.7813f, 3.0f, textColor);
-	} else
-	if (cfg.shaderName && !strcmp(cfg.shaderName, "cat")) {
+	GLint songinfoLoc = glGetUniformLocation(r->progID, "songinfo");
+	printf("%d\n", songinfoLoc);
+	if (songinfoLoc != -1) {
+		glUniform1i(songinfoLoc, 1);
 		float textColor[] = {1.0, 1.0, 1.0};
-		renderText(r, r->songInfo.artist, 0.206f, 0.4102f, 1.0f, textColor);
-		renderText(r, r->songInfo.title, 0.206f, 0.3418f, 0.75f, textColor);
+		renderText(r, r->songInfo.artist, 0.0f, 0.0f, 1.0f, textColor);
+		renderText(r, r->songInfo.title, 0.0f, 1.0f, 1.0f, textColor);
+		glUniform1i(songinfoLoc, 0);
 	}
 
 	checkErrors("Draw screen");
